@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Little Harbor Tides</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sea:#dbe8e3; --ink:#10303f; --kelp:#2f5d50; --buoy:#f2c230; --water:#8fc1c6; --card:#eef5f2; --muted:#4d6a73;
+  --head:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif; --body:"Newsreader",Georgia,"Times New Roman",serif;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--sea:#0e2530;--ink:#e3efec;--kelp:#8fc7b4;--buoy:#f2c230;--water:#1f5a68;--card:#143240;--muted:#9bb5bb;color-scheme:dark}
+}
+:root[data-theme="dark"]{--sea:#0e2530;--ink:#e3efec;--kelp:#8fc7b4;--buoy:#f2c230;--water:#1f5a68;--card:#143240;--muted:#9bb5bb;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--sea);color:var(--ink);font:1.125rem/1.6 var(--body)}
+.wrap{max-width:62rem;margin:0 auto;padding:0 1.25rem}
+header{display:flex;justify-content:space-between;align-items:baseline;padding:1.25rem 0}
+.brand{font:800 1.15rem var(--head);letter-spacing:-.01em}
+nav a{color:var(--ink);margin-left:1.25rem;font:500 .95rem var(--head);text-decoration:none;border-bottom:2px solid transparent}
+nav a:hover,nav a:focus-visible{border-color:var(--buoy);outline:none}
+h1{font:800 clamp(2.6rem,8vw,5.5rem)/.95 var(--head);letter-spacing:-.035em;margin:2rem 0 1rem;max-width:11ch}
+.lede{max-width:34rem;color:var(--muted);margin:0 0 1.5rem}
+.chart{background:var(--card);border-radius:1.25rem;padding:1rem 1rem 1.25rem;margin:1.5rem 0 0}
+.readout{display:flex;flex-wrap:wrap;gap:.5rem 2rem;align-items:baseline;margin:0 .25rem .5rem}
+.big{font:800 clamp(2.2rem,6vw,3.4rem)/1 var(--head);letter-spacing:-.03em}
+.big small{font:500 1rem var(--head);color:var(--muted);letter-spacing:0}
+.state{font:500 1rem var(--head)}
+.badge{display:inline-block;padding:.15rem .7rem;border-radius:2rem;background:var(--buoy);color:#10303f;font:500 .9rem var(--head)}
+svg{display:block;width:100%;height:auto}
+.axis{fill:var(--muted);font:500 12px var(--head)}
+input[type=range]{width:100%;margin:.75rem 0 0;accent-color:var(--kelp);height:2rem}
+input[type=range]:focus-visible{outline:3px solid var(--buoy);outline-offset:2px}
+.hint{margin:.25rem .25rem 0;color:var(--muted);font-size:.95rem}
+section{padding:3.5rem 0 0}
+h2{font:800 clamp(1.6rem,4vw,2.2rem)/1.1 var(--head);letter-spacing:-.02em;margin:0 0 1rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:2rem}
+.times{list-style:none;margin:0;padding:0}
+.times li{display:flex;justify-content:space-between;padding:.55rem 0;border-bottom:1px solid color-mix(in srgb,var(--ink) 18%,transparent)}
+.times b{font:500 1rem var(--head)}
+.tips p{margin:0 0 .9rem}
+.wide{max-width:38rem}
+footer{margin-top:4rem;padding:2rem 0 2.5rem;color:var(--muted);font-size:.95rem;border-top:1px solid color-mix(in srgb,var(--ink) 18%,transparent)}
+button.mode{background:none;border:2px solid var(--ink);color:var(--ink);border-radius:2rem;padding:.2rem .9rem;font:500 .9rem var(--head);cursor:pointer;margin-left:1rem}
+button.mode:focus-visible{outline:3px solid var(--buoy);outline-offset:2px}
+@media (prefers-reduced-motion:no-preference){.draw{stroke-dasharray:1400;stroke-dashoffset:1400;animation:d 1.6s ease-out forwards}@keyframes d{to{stroke-dashoffset:0}}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="brand">Little Harbor</span>
+    <nav><a href="#times">Today</a><a href="#flats">The flats</a><a href="#about">About</a></nav>
+  </header>
+
+  <main>
+    <h1>When is the water out?</h1>
+    <p class="lede">Drag the slider to see how high the tide will be at any hour today, and when the sandbar is safe to walk.</p>
+
+    <div class="chart">
+      <div class="readout" aria-live="polite">
+        <span class="big"><span id="time">12:00</span></span>
+        <span class="big"><span id="height">1.2</span><small> m</small></span>
+        <span class="state" id="state">Rising</span>
+        <span class="badge" id="walk" hidden>Sandbar open</span>
+      </div>
+      <svg viewBox="0 0 800 270" role="img" aria-label="Tide height across 24 hours">
+        <path id="fill" fill="var(--water)" opacity=".85"/>
+        <path id="line" class="draw" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
+        <line id="walkline" x1="0" x2="800" stroke="var(--kelp)" stroke-width="1.5" stroke-dasharray="6 6"/>
+        <text class="axis" x="6" id="walklabel">0.7 m: sandbar opens below this line</text>
+        <line id="cur" y1="10" y2="250" stroke="var(--buoy)" stroke-width="3"/>
+        <circle id="dot" r="9" fill="var(--buoy)" stroke="var(--ink)" stroke-width="3"/>
+        <g id="ticks"></g>
+      </svg>
+      <input id="slider" type="range" min="0" max="1425" step="15" value="720" aria-label="Time of day">
+      <p class="hint">Heights are sample data for this demo, not for navigation.</p>
+    </div>
+
+    <section id="times">
+      <div class="grid">
+        <div>
+          <h2>Highs and lows today</h2>
+          <ul class="times" id="list"></ul>
+        </div>
+        <div class="tips" id="flats">
+          <h2>Walking the flats</h2>
+          <p>The sandbar to the old pier shows when the tide drops below 0.7 m. Plan to be back on shore well before it turns.</p>
+          <p>Wear shoes you can get wet. The mussel beds are sharp and the mud near the channel is soft.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="wide">
+      <h2>About this page</h2>
+      <p>Little Harbor is a made-up fishing village, and this is a small front-end demo: one page, no server, and a tide curve drawn in your browser.</p>
+    </section>
+  </main>
+
+  <footer>Built as a front-end sketch.<button class="mode" id="mode" type="button">Switch theme</button></footer>
+</div>
+
+<script>
+(function(){
+  var W=800, base=250, scale=95;
+  function h(m){var t=m/60;return 1.2+1.0*Math.cos(2*Math.PI*(t-5.5)/12.42)+0.12*Math.cos(4*Math.PI*(t-3)/12.42)}
+  function X(m){return m/1440*W}
+  function Y(v){return base-v*scale}
+  function pad(n){return (n<10?"0":"")+n}
+  function fmt(m){return pad(Math.floor(m/60))+":"+pad(Math.round(m%60))}
+  var d="";
+  for(var m=0;m<=1440;m+=10){d+=(m?"L":"M")+X(m).toFixed(1)+" "+Y(h(m)).toFixed(1)}
+  document.getElementById("line").setAttribute("d",d);
+  document.getElementById("fill").setAttribute("d",d+"L800 "+base+"L0 "+base+"Z");
+  var wy=Y(0.7);
+  var wl=document.getElementById("walkline");wl.setAttribute("y1",wy);wl.setAttribute("y2",wy);
+  var lab=document.getElementById("walklabel");lab.setAttribute("y",wy-6);
+  var ticks=document.getElementById("ticks"),ns="http://www.w3.org/2000/svg";
+  [0,6,12,18,24].forEach(function(hr){
+    var t=document.createElementNS(ns,"text");t.setAttribute("class","axis");
+    t.setAttribute("x",Math.min(Math.max(X(hr*60),14),786));t.setAttribute("y",266);
+    t.setAttribute("text-anchor",hr===0?"start":hr===24?"end":"middle");
+    t.textContent=pad(hr%24)+":00";ticks.appendChild(t);
+  });
+  var ex=[];
+  for(var m=10;m<1440;m+=1){var a=h(m-1),b=h(m),c=h(m+1);
+    if(b>a&&b>=c)ex.push({m:m,v:b,k:"High"});
+    if(b<a&&b<=c)ex.push({m:m,v:b,k:"Low"});}
+  var list=document.getElementById("list");
+  ex.forEach(function(e){
+    var li=document.createElement("li");
+    li.innerHTML="<b>"+e.k+" tide</b><span>"+fmt(e.m)+" &middot; "+e.v.toFixed(1)+" m</span>";
+    list.appendChild(li);
+  });
+  var s=document.getElementById("slider"),cur=document.getElementById("cur"),dot=document.getElementById("dot");
+  function update(){
+    var m=+s.value,v=h(m),x=X(m);
+    cur.setAttribute("x1",x);cur.setAttribute("x2",x);
+    dot.setAttribute("cx",x);dot.setAttribute("cy",Y(v));
+    document.getElementById("time").textContent=fmt(m);
+    document.getElementById("height").textContent=v.toFixed(1);
+    document.getElementById("state").textContent=h(m+5)>h(m-5)?"Rising":"Falling";
+    document.getElementById("walk").hidden=!(v<0.7);
+  }
+  s.addEventListener("input",update);
+  var now=new Date();s.value=Math.floor((now.getHours()*60+now.getMinutes())/15)*15;update();
+  document.getElementById("mode").addEventListener("click",function(){
+    var r=document.documentElement,dark=r.getAttribute("data-theme")?r.getAttribute("data-theme")==="dark":matchMedia("(prefers-color-scheme: dark)").matches;
+    r.setAttribute("data-theme",dark?"light":"dark");
+  });
+})();
+</script>
+</body>
+</html>
